@@ -44,7 +44,7 @@ fn conv_1d_simple[
         @parameter
         for j in range(CONV):
             if local_i + j < SIZE:
-                local_sum += shared_a[local_i + j] * shared_b[local_i]
+                local_sum += shared_a[local_i + j] * shared_b[j]
 
         output[global_i] = local_sum
 
