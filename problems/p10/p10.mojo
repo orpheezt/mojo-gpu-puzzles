@@ -23,7 +23,7 @@ fn dot_product(
         TPB, Scalar[dtype], address_space = AddressSpace.SHARED
     ]()
 
-    global_id = block_idx.x + block_dim.x + thread_idx.x
+    global_id = block_idx.x * block_dim.x + thread_idx.x
     local_id = thread_idx.x
 
     if global_id < size:
