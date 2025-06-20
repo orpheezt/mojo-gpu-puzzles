@@ -75,7 +75,7 @@ fn conv_1d_block_boundary[
     shared_b = tb[dtype]().row_major[CONV_2]().shared().alloc()
 
     if global_i < SIZE_2:
-        shared_a[local_i] = a[local_i]
+        shared_a[local_i] = a[global_i]
 
     if local_i < CONV_2 - 1:
         next_idx = global_i + TPB
@@ -85,7 +85,7 @@ fn conv_1d_block_boundary[
             shared_a[TPB + local_i] = 0
 
     if local_i < CONV_2:
-        shared_b[local_i] = b[global_i]
+        shared_b[local_i] = b[local_i]
 
     barrier()
 
