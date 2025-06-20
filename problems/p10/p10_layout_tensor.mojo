@@ -41,7 +41,7 @@ fn dot_product[
         barrier()
         stride //= 2
 
-    if global_id == 0:
+    if local_id == 0:
         output[0] = shared[0]
 
 

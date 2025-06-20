@@ -27,7 +27,7 @@ fn pooling[
     local_i = thread_idx.x
 
     if global_i < size:
-        shared[local_i] + a[global_i]
+        shared[local_i] = a[global_i]
 
     barrier()
 
