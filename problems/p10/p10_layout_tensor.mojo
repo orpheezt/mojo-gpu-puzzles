@@ -24,7 +24,7 @@ fn dot_product[
     b: LayoutTensor[mut=True, dtype, in_layout],
     size: Int,
 ):
-    shared = tb[dtype]().row_major[TBP]().shared().alloc()
+    shared = tb[dtype]().row_major[TPB]().shared().alloc()
 
     global_id = thread_block.x * block_dim.x + thread_idx.x
     local_id = thread_idx.x

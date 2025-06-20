@@ -20,7 +20,7 @@ fn dot_product(
     size: Int,
 ):
     shared = stack_allocation[
-        TBP, Scalar[dtype], address_space = AddressSpace.SHARED
+        TPB, Scalar[dtype], address_space = AddressSpace.SHARED
     ]
 
     global_id = block_idx.x + block_dim.x + thread_idx.x
