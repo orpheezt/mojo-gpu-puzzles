@@ -26,7 +26,7 @@ fn dot_product[
 ):
     shared = tb[dtype]().row_major[TPB]().shared().alloc()
 
-    global_id = thread_block.x * block_dim.x + thread_idx.x
+    global_id = block_idx.x * block_dim.x + thread_idx.x
     local_id = thread_idx.x
 
     if global_id < size:
@@ -34,7 +34,7 @@ fn dot_product[
 
     barrier()
 
-    stride = TBP // 2
+    stride = TPB // 2
     while stride > 0:
         if local_id < stride:
             shared[local_id] += shared[local_id + stride]
