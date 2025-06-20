@@ -21,6 +21,7 @@ fn broadcast_add(
     if row < size and col < size:
         output[row * size + col] = a[col] + b[row]
 
+
 # ANCHOR_END: broadcast_add
 def main():
     with DeviceContext() as ctx:

@@ -18,6 +18,7 @@ fn add(
     i = thread_idx.x
     output[i] = a[i] + b[i]
 
+
 # ANCHOR_END: add
 
 

@@ -25,6 +25,7 @@ fn add_10_blocks_2d[
     if row < size and col < size:
         output[row, col] = a[row, col] + 10.0
 
+
 # ANCHOR_END: add_10_blocks_2d_layout_tensor
 
 
