@@ -25,7 +25,7 @@ fn naive_matmul[
 ):
     row = block_dim.y * block_idx.y + thread_idx.y
     col = block_dim.x * block_idx.x + thread_idx.x
-    if row < size and row < size:
+    if row < size and col < size:
         var acc: output.element_type = 0
         @parameter
         for k in range(size):
