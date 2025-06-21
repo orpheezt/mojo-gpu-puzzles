@@ -25,10 +25,10 @@ fn naive_matmul[
 ):
     row = block_dim.y * block_idx.y + thread_idx.y
     col = block_dim.x * block_idx.x + thread_idx.x
-    if row < SIZE and row < SIZE:
+    if row < size and row < size:
         var acc: output.element_type = 0
         @parameter
-        for k in range(SIZE):
+        for k in range(size):
             acc += a[row, k] * b[k, col]
         output[row, col] += acc
 
