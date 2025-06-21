@@ -63,7 +63,7 @@ fn single_block_matmul[
 
         @parameter
         for k in range(size):
-            acc += shared_a[local_col] * shared_b[local_row]
+            acc += shared_a[local_row, k] * shared_b[k, local_col]
 
         output[row, col] = acc
 
