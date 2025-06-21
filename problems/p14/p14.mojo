@@ -3,8 +3,9 @@ from testing import assert_equal
 from gpu.host import DeviceContext
 
 # ANCHOR: naive_matmul
-from gpu import thread_idx, block_idx, block_dim, barrier
+from gpu import thread_idx, block_idx, block_dim, barrier, async_copy_wait_all
 from layout import Layout, LayoutTensor
+from layout.layout_tensor import copy_dram_to_sram_async
 from layout.tensor_builder import LayoutTensorBuild as tb
 
 
@@ -77,6 +78,50 @@ alias THREADS_PER_BLOCK_TILED = (TPB, TPB)
 alias layout_tiled = Layout.row_major(SIZE_TILED, SIZE_TILED)
 
 
+# fn matmul_tiled[
+#     layout: Layout, size: Int
+# ](
+#     output: LayoutTensor[mut=False, dtype, layout],
+#     a: LayoutTensor[mut=False, dtype, layout],
+#     b: LayoutTensor[mut=False, dtype, layout],
+# ):
+#     local_row = thread_idx.y
+#     local_col = thread_idx.x
+#     global_row = block_idx.y * TPB + local_row
+#     global_col = block_idx.x * TPB + local_col
+
+#     shared_a = tb[dtype]().row_major[TPB, TPB]().shared().alloc().fill(0)
+#     shared_b = tb[dtype]().row_major[TPB, TPB]().shared().alloc().fill(0)
+
+#     var acc: output.element_type = 0
+
+#     @parameter
+#     for tile in range((size + TPB - 1) // TPB):
+#         if local_row < TPB and local_col < TPB:
+#             shared_a[local_row, local_col] = 0
+#             shared_b[local_row, local_col] = 0
+#         barrier()
+
+#         if global_row < size and (tile * TPB + local_col) < size:
+#             shared_a[local_row, local_col] = a[
+#                 global_row, tile * TPB + local_col
+#             ]
+#         if (tile * TPB + local_row) < size and global_col < size:
+#             shared_b[local_row, local_col] = b[
+#                 tile * TPB + local_row, global_col
+#             ]
+#         barrier()
+
+#         @parameter
+#         for k in range(min(TPB, size - tile * TPB)):
+#             acc += shared_a[local_row, k] * shared_b[k, local_col]
+
+#         barrier()
+
+#     if global_row < size and global_col < size:
+#         output[global_row, global_col] = acc
+
+
 fn matmul_tiled[
     layout: Layout, size: Int
 ](
@@ -89,33 +134,30 @@ fn matmul_tiled[
     global_row = block_idx.y * TPB + local_row
     global_col = block_idx.x * TPB + local_col
 
-    shared_a = tb[dtype]().row_major[TPB, TPB]().shared().alloc().fill(0)
-    shared_b = tb[dtype]().row_major[TPB, TPB]().shared().alloc().fill(0)
+    out_tile = output.tile[TPB, TPB](block_idx.y, block_idx.x)
+
+    a_shared = tb[dtype]().row_major[TPB, TPB]().shared().alloc().fill(0)
+    b_shared = tb[dtype]().row_major[TPB, TPB]().shared().alloc().fill(0)
 
     var acc: output.element_type = 0
 
-    @parameter
-    for tile in range((size + TPB - 1) // TPB):
-        if local_row < TPB and local_col < TPB:
-            shared_a[local_row, local_col] = 0
-            shared_b[local_row, local_col] = 0
-        barrier()
+    alias load_a_layout = Layout.row_major(1, TPB)
+    alias load_b_layout = Layout.row_major(TPB, 1)
 
-        if global_row < size and (tile * TPB + local_col) < size:
-            shared_a[local_row, local_col] = a[
-                global_row, tile * TPB + local_col
-            ]
-        if (tile * TPB + local_row) < size and global_col < size:
-            shared_b[local_row, local_col] = b[
-                tile * TPB + local_row, global_col
-            ]
+    @parameter
+    for idx in range(size // TPB):
+        a_tile = a.tile[TPB, TPB](block_idx.y, idx)
+        b_tile = b.tile[TPB, TPB](idx, block_idx.x)
+
+        copy_dram_to_sram_async[thread_layout=load_a_layout](a_shared, a_tile)
+        copy_dram_to_sram_async[thread_layout=load_b_layout](b_shared, b_tile)
+
+        async_copy_wait_all()
         barrier()
 
         @parameter
-        for k in range(min(TPB, size - tile * TPB)):
-            acc += shared_a[local_row, k] * shared_b[k, local_col]
-
-        barrier()
+        for k in range(TPB):
+            acc += a_shared[local_row, k] * b_shared[k, local_col]
 
     if global_row < size and global_col < size:
         output[global_row, global_col] = acc
