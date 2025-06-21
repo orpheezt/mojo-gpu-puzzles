@@ -60,6 +60,7 @@ def conv_1d(
                 "conv_size": kernel_tensor.shape[0],
                 "dtype": dtype,
             },
+            device = DeviceRef.from_device(device)
         )[0].tensor
         graph.output(output)
 
